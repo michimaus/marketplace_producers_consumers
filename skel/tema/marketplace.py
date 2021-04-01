@@ -6,7 +6,6 @@ Assignment 1
 March 2021
 """
 
-from threading import Lock
 from typing import Dict, Deque
 from collections import deque
 
@@ -26,17 +25,21 @@ class Marketplace:
         :type queue_size_per_producer: Int
         :param queue_size_per_producer: the maximum size of a queue associated with each producer
         """
+
+        # Mapping the producer to the produced quantities
         self.number_of_products_per_producer: Dict[int, int] = {}
+
+        # Mapping a product to the list of apparitions, according to the producer ID
         self.products_evidence: Dict[Product, Deque[int]] = {}
 
+        # Mapping a cart to the contained products, arranged by the producers ID
         self.cart_evidence: Dict[int, Dict[Product, Deque[int]]] = {}
 
+        # Listing for ID assignments
         self.id_producer: int = 0
         self.id_cart: int = 0
 
-        self.adding_locker = Lock()
-        self.publish_locker = Lock()
-
+        # Max size allocated for the shelf of each producer
         self.queue_size_per_producer: int = queue_size_per_producer
 
     def register_producer(self):
@@ -45,6 +48,7 @@ class Marketplace:
         """
         current_val: int
 
+        # Increment and assign an ID for a producer
         current_val = self.id_producer
         self.number_of_products_per_producer[current_val] = 0
         self.id_producer += 1
@@ -63,9 +67,12 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again.
         """
-        if self.number_of_products_per_producer[producer_id] == self.queue_size_per_producer:
+
+        # Fail in case there is no space left
+        if self.number_of_products_per_producer[producer_id] >= self.queue_size_per_producer:
             return False
 
+        # Increment in the evidence mapping
         self.number_of_products_per_producer[producer_id] += 1
         if product in self.products_evidence:
             self.products_evidence[product].append(producer_id)
@@ -82,6 +89,7 @@ class Marketplace:
         """
         current_val: int
 
+        # Increment and assign an ID for each cart
         current_val = self.id_cart
         self.id_cart += 1
         self.cart_evidence[current_val] = {}
@@ -100,11 +108,15 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again
         """
+
+        # Fail in case the product is not on stock
         if product not in self.products_evidence or len(self.products_evidence[product]) == 0:
             return False
 
+        # Get the ID of the producer for the next product in line
         producer_of_product: int = self.products_evidence[product].popleft()
 
+        # Add the product to the cart evidence and take out from market evidence
         if product in self.cart_evidence[cart_id]:
             self.cart_evidence[cart_id][product].append(producer_of_product)
         else:
@@ -124,8 +136,12 @@ class Marketplace:
         :type product: Product
         :param product: the product to remove from cart
         """
+
+        # Take out prom cart evidence and republish
         producer_of_product: int = self.cart_evidence[cart_id][product].popleft()
 
+        # The product already existed on the evidence ot the market
+        # As there is no need for an additional check as done before
         self.products_evidence[product].append(producer_of_product)
         self.number_of_products_per_producer[producer_of_product] += 1
 
@@ -136,5 +152,8 @@ class Marketplace:
         :type cart_id: Int
         :param cart_id: id cart
         """
+        # Return the mapping inside the cart
+        # Producers of the specific kind of product no longer an interest factor
+        # Quantity is the main interest now
         return dict(
             (prod, len(self.cart_evidence[cart_id][prod])) for prod in self.cart_evidence[cart_id])

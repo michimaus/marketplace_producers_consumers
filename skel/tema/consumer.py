@@ -35,21 +35,26 @@ class Consumer(Thread):
         :type kwargs:
         :param kwargs: other arguments that are passed to the Thread's __init__()
         """
+
+        # Initializing the thread
         super().__init__(name=kwargs['name'])
 
+        # Injecting the market reference and setting the assigned waiting time
         self.marketplace = marketplace
         self.retry_wait_time = retry_wait_time
 
+        # Mapping a new cart for each list of commands
         self.carts_of_customer: Dict[int, List[Dict[str, any]]] = dict(
             (marketplace.new_cart(), cart) for cart in carts)
 
     def run(self):
+        # Go through each set of commands for each cart
         for entry in self.carts_of_customer:
-
             for product in self.carts_of_customer[entry]:
                 if product['type'] == 'add':
                     i: int = 0
 
+                    # Add products as long as it is possible
                     while i < product['quantity']:
                         is_added: bool = self.marketplace.add_to_cart(entry, product['product'])
 
@@ -59,10 +64,13 @@ class Consumer(Thread):
                             sleep(self.retry_wait_time)
                 elif product['type'] == 'remove':
                     i: int = 0
+
+                    # Remove specific products, according to the current instruction
                     while i < product['quantity']:
                         self.marketplace.remove_from_cart(entry, product['product'])
                         i += 1
 
+            # Call for the mapping products -> quantity
             product_for_order: Dict[Product, int] = self.marketplace.place_order(entry)
             for product in product_for_order:
                 for i in range(product_for_order[product]):
