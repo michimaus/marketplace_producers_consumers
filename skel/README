@@ -1,0 +1,27 @@
+DUICAN MIHNEA - IONUT
+334CA
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ TEMA 1 ASC ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Used multiple data structures, which are coming by default with blocking capabilities,
+in order to avoid concurrency situations.
+
+Efficiently managed the marketplace:
+ - by mapping the ID of a producer to it's space left on his very own shelf
+ - having an evidence for each type of product associated with a list of producer IDs
+ - the kind of list mentioned above may contain duplicates
+ - the size of list represents the amount of available products of that kind
+ - same mapping product -> list_of_evidence when it comes to shopping cart handling
+
+Decoupling the lists of stocks of the store from the lists to be found inside each cart.
+In order to avoid starvation on the producers, each consumer would add to his cart
+from the left side of the list associated with the stock on a specific product,
+meanwhile the producer would publish on the right side of the list.
+
+The producers would keep running as long as there is space left on their own shelf,
+or until the program needs to quit. The consumers would just go through their
+shopping instructions and configure their carts accordingly. Right after a
+cart gets finished, the consumer would place the order, in which case there
+is no more interest in knowing where each product came from (no more need
+for keeping the product associated with iys producer ID)
+
